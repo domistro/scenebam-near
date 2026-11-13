@@ -28,6 +28,7 @@ SceneBam's servers.
 |---|---|
 | Contract | [`scenebam-prov-mwfjzimv.testnet`](https://testnet.nearblocks.io/address/scenebam-prov-mwfjzimv.testnet) |
 | Registered films | `demo/whiteboard-board.mp4` ([tx](https://testnet.nearblocks.io/txns/85cytqh4WXV6XSKNfS2gnag2dm9zmWGL4vwHJnxH297E)), `demo/explainer-sketch.mp4` ([tx](https://testnet.nearblocks.io/txns/2Rb5XhHts8ysPzr5gba1xQXV3SJg6BW4y51P65BBdZa9)), `demo/chalkboard.mp4` ([tx](https://testnet.nearblocks.io/txns/H2gwPpGLmbLVD6ZjxE1sQFYa4acHgsQc9N6bpDZNU3R9)) |
+| Film planned privately on NEAR AI Cloud | `demo/private-whiteboard.mp4` ([tx](https://testnet.nearblocks.io/txns/9yHMKFTSvaf2aSiZaNoYPokRpSSgGyV9EPE5tCcgd8on)). Its record's `ai_attestation` is the digest of `demo/proofs/private-whiteboard.ai-attestation.json`, a live proof from `deepseek-ai/DeepSeek-V4.1-Flash-1017` in which all four checks passed |
 | Verify page | `web/index.html` (static, no build; also on GitHub Pages at https://domistro.github.io/scenebam-near/web/) |
 
 The three demo films are real SceneBam output.
@@ -174,6 +175,21 @@ You should see the plan, followed by four checks:
 
 Then comes the `proof digest`, and the full proof is written to
 `ai-attestation.json`. Pass the digest to `register` as `AI_ATTESTATION=<digest>`.
+
+**9. Re-check the live private-AI proof without any key**
+
+```bash
+node --import tsx cli/check-proof.ts demo/proofs/private-whiteboard.ai-attestation.json demo/private-whiteboard.mp4
+```
+
+You should see four ✓ lines:
+- the signature recovers to the TEE signing key;
+- the signed hashes match;
+- the digest recomputes;
+- the digest equals the `ai_attestation` in that film's NEAR record.
+
+`node cli/verify.mjs demo/private-whiteboard.mp4` shows the same digest on
+chain.
 
 `npm test` covers the verification logic offline, using a locally generated
 key in place of the TEE key. It checks that genuine proofs pass, and that a

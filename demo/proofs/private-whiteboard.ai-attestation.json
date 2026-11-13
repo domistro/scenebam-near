@@ -1,0 +1,22 @@
+{
+  "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  "chatId": "chatcmpl-1a57f1e6-8664-41dc-9250-d3ece6a932b1",
+  "requestHash": "783ae5dd63eef8de3ebea8ee9cf0863f2d639c5e0bd68ee54affb34f7014e91f",
+  "responseHash": "3ee9aa8fc53a341d3cb528139ed247a3a77eb35af23b0f3a9d2ff176dfdd6d9f",
+  "signedText": "deepseek-ai/DeepSeek-V4.1-Flash-1017:783ae5dd63eef8de3ebea8ee9cf0863f2d639c5e0bd68ee54affb34f7014e91f:3ee9aa8fc53a341d3cb528139ed247a3a77eb35af23b0f3a9d2ff176dfdd6d9f",
+  "signature": "0xe0a31a7c274ad9b4a5ddc91cff3774ae91483fd1268537e52ec3563f79292c01053076f6e94a67c4c95cc367a5241af11a89df2c03044e54b6acdcb335ba5d441b",
+  "signingAddress": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+  "checks": {
+    "requestHash": true,
+    "responseHash": true,
+    "signature": true,
+    "attestationBinding": true
+  },
+  "attestation": {
+    "nonce": "61d6ce5ce13fc87d33d4f3d9621d8218a78115ab8a6d9d90efc4263128c1242e",
+    "reportDataHex": "fe0071895500a9755c18044948ab4f4e1a7f337e00000000000000000000000061d6ce5ce13fc87d33d4f3d9621d8218a78115ab8a6d9d90efc4263128c1242e",
+    "hasIntelQuote": true,
+    "hasNvidiaPayload": true
+  },
+  "digest": "bf78d6d203163f4e177ed42bb8e168863518ddb9921764816e36c991aa47464f"
+}
