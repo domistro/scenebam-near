@@ -1,0 +1,14 @@
+{
+  "name": "scenebam-near",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "verify": "node cli/verify.mjs",
+    "register": "node cli/register.mjs",
+    "test": "node --import tsx worker/near-provenance.test.ts && node --test cli/near.test.mjs",
+    "test:contract": "cd contract && cargo test"
+  },
+  "dependencies": { "near-api-js": "7.5.3" },
+  "devDependencies": { "tsx": "4.23.1", "@types/node": "22.15.0" }
+}

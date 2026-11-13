@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SceneBam Verify</title>
+<meta name="description" content="Check who made a SceneBam video, from its permanent record on NEAR. The file is hashed on your device and never uploaded.">
+<style>
+  :root { --bg:#faf8f4; --fg:#18160f; --muted:#6b665b; --line:#d9d3c7; --card:#fff; --ok:#147a48; --bad:#a3352b; --accent:#18160f; --accent-fg:#faf8f4; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#14130f; --fg:#f2efe7; --muted:#a39d90; --line:#3a372f; --card:#1c1b16; --ok:#4cc58a; --bad:#ef7d72; --accent:#f2efe7; --accent-fg:#14130f; } }
+  :root[data-theme="dark"] { --bg:#14130f; --fg:#f2efe7; --muted:#a39d90; --line:#3a372f; --card:#1c1b16; --ok:#4cc58a; --bad:#ef7d72; --accent:#f2efe7; --accent-fg:#14130f; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:56px 16px 80px; }
+  h1 { font-size:clamp(28px,6vw,40px); line-height:1.1; margin:0 0 10px; letter-spacing:-.02em; }
+  p.lead { color:var(--muted); margin:0 0 28px; }
+  .drop { display:block; border:1.5px dashed var(--line); border-radius:16px; padding:36px 16px; text-align:center; cursor:pointer; background:var(--card); }
+  .drop.over { border-color:var(--fg); }
+  .drop input { display:none; }
+  .drop small { display:block; color:var(--muted); margin-top:4px; }
+  form { display:flex; gap:8px; margin-top:12px; }
+  form input { flex:1; min-width:0; padding:11px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--fg); font:inherit; }
+  button { padding:11px 18px; border-radius:10px; border:0; background:var(--accent); color:var(--accent-fg); font:inherit; font-weight:600; cursor:pointer; }
+  .result { margin-top:20px; border:1px solid var(--line); border-radius:16px; padding:20px; background:var(--card); min-height:64px; }
+  .ok { color:var(--ok); font-weight:700; font-size:18px; }
+  .bad { color:var(--bad); font-weight:700; font-size:18px; }
+  dl { display:grid; grid-template-columns:max-content 1fr; gap:6px 16px; margin:14px 0 0; }
+  dt { color:var(--muted); } dd { margin:0; word-break:break-all; }
+  code { font:13px ui-monospace,SFMono-Regular,Menlo,monospace; word-break:break-all; }
+  a { color:inherit; }
+  footer { margin-top:28px; color:var(--muted); font-size:14px; }
+  .samples { margin-top:14px; font-size:14px; color:var(--muted); }
+  .samples button { background:transparent; color:var(--fg); border:1px solid var(--line); padding:6px 10px; font-weight:500; margin:4px 6px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Verify a video</h1>
+  <p class="lead">Every SceneBam film gets a permanent record on NEAR the moment it is finished. Drop a copy here to see who made it and when. The file is hashed on your device and never uploaded. The lookup goes straight to NEAR, not to SceneBam.</p>
+
+  <label class="drop" id="drop" data-testid="verify-drop">
+    <input type="file" id="file" accept="video/*">
+    <strong>Choose or drop a video</strong>
+    <small>MP4, any size</small>
+  </label>
+
+  <form id="hashForm">
+    <input id="hash" placeholder="…or paste a SHA-256 hash" autocomplete="off" spellcheck="false">
+    <button type="submit">Check</button>
+  </form>
+
+  <div class="samples" id="samples">Try a real SceneBam film:
+    <button type="button" data-src="../demo/whiteboard-board.mp4">Whiteboard</button>
+    <button type="button" data-src="../demo/explainer-sketch.mp4">Explainer</button>
+    <button type="button" data-src="../demo/chalkboard.mp4">Chalkboard</button>
+  </div>
+
+  <section class="result" id="result" data-testid="verify-result" aria-live="polite"><span style="color:var(--muted)">No file checked yet.</span></section>
+
+  <footer>Registry contract <a id="contractLink" target="_blank" rel="noreferrer"></a> on NEAR <span id="net"></span>. Source: <a href="https://github.com/domistro/scenebam-near">github.com/domistro/scenebam-near</a></footer>
+</main>
+<script>
+const params = new URLSearchParams(location.search);
+const NETWORK = params.get("network") === "mainnet" ? "mainnet" : "testnet";
+const CONTRACT = params.get("contract") || "scenebam-prov-mwfjzimv.testnet";
+const RPC = { mainnet: "https://rpc.mainnet.near.org", testnet: "https://rpc.testnet.near.org" }[NETWORK];
+const EXPLORER = { mainnet: "https://nearblocks.io", testnet: "https://testnet.nearblocks.io" }[NETWORK];
+const $ = (id) => document.getElementById(id);
+const result = $("result");
+$("contractLink").textContent = CONTRACT; $("contractLink").href = `${EXPLORER}/address/${CONTRACT}`; $("net").textContent = NETWORK;
+
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+async function sha256Hex(buf) {
+  const d = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(d), b => b.toString(16).padStart(2, "0")).join("");
+}
+async function lookup(hash) {
+  const args = btoa(JSON.stringify({ file_hash: hash }));
+  const res = await fetch(RPC, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
+    jsonrpc: "2.0", id: "verify", method: "query",
+    params: { request_type: "call_function", finality: "final", account_id: CONTRACT, method_name: "get_record", args_base64: args } }) });
+  const json = await res.json();
+  if (json.error || json.result?.error) throw new Error(json.error?.cause?.name || json.result?.error || "NEAR lookup failed");
+  return JSON.parse(new TextDecoder().decode(new Uint8Array(json.result.result)));
+}
+async function check(hash, label) {
+  result.innerHTML = `Looking up <code>${hash.slice(0, 16)}…</code> on NEAR ${NETWORK}…`;
+  try {
+    const r = await lookup(hash);
+    if (!r) {
+      result.innerHTML = `<div class="bad">✕ No record found</div><p style="margin:6px 0 0;color:var(--muted)">${label ? esc(label) + " was" : "This exact file was"} never registered by SceneBam. It may have been re-encoded, trimmed or made elsewhere.</p><dl><dt>SHA-256</dt><dd><code>${hash}</code></dd></dl>`;
+      return;
+    }
+    const when = new Date(r.timestamp_ns / 1e6);
+    result.innerHTML = `<div class="ok">✓ Original SceneBam film</div><dl>
+      <dt>Creator</dt><dd>${esc(r.creator)}</dd>
+      <dt>Registered</dt><dd>${when.toUTCString()}</dd>
+      <dt>Block</dt><dd><a href="${EXPLORER}/blocks/${r.block_height}" target="_blank" rel="noreferrer">#${r.block_height}</a></dd>
+      <dt>Style</dt><dd>${esc(r.family)}</dd>
+      <dt>Production</dt><dd><code>${esc(r.production_id)}</code></dd>
+      <dt>Renditions</dt><dd>${r.files.map(([n]) => esc(n)).join(", ")}</dd>
+      ${r.ai_attestation ? `<dt>Private AI</dt><dd>Planned inside a TEE on NEAR AI Cloud<br><code>${esc(r.ai_attestation)}</code></dd>` : ""}
+      <dt>SHA-256</dt><dd><code>${hash}</code></dd></dl>`;
+  } catch (e) { result.innerHTML = `<div class="bad">Could not check</div><p>${esc(e.message || e)}</p>`; }
+}
+async function onFile(file) {
+  if (!file) return;
+  result.textContent = `Hashing ${file.name}…`;
+  check(await sha256Hex(await file.arrayBuffer()), file.name);
+}
+$("file").addEventListener("change", e => onFile(e.target.files[0]));
+const drop = $("drop");
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); onFile(e.dataTransfer.files[0]); });
+$("hashForm").addEventListener("submit", e => {
+  e.preventDefault(); const h = $("hash").value.trim().toLowerCase();
+  if (/^[0-9a-f]{64}$/.test(h)) check(h); else result.innerHTML = `<div class="bad">Enter a 64-character SHA-256 hash.</div>`;
+});
+$("samples").addEventListener("click", async e => {
+  const src = e.target.dataset?.src; if (!src) return;
+  result.textContent = "Fetching sample…";
+  try { const buf = await (await fetch(src)).arrayBuffer(); check(await sha256Hex(buf), src.split("/").pop()); }
+  catch { result.innerHTML = `<div class="bad">Could not load the sample here. Download it from the repo's demo folder and drop it in.</div>`; }
+});
+if (params.get("hash")) check(params.get("hash").toLowerCase());
+</script>
+</body>
+</html>
