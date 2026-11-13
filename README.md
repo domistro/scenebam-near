@@ -96,7 +96,7 @@ You should see 4 passing tests:
 npm test
 ```
 
-You should see `near-provenance: ok` and `# pass 2`.
+You should see `near-provenance: ok`, `near-ai-proof: ok` and `# pass 2`.
 
 **7. Deploy your own registry (optional)**
 
@@ -144,11 +144,40 @@ off-by-default behaviour, the pseudonyms, hashing and the outage path.
 
 ## Private AI planning (NEAR AI Cloud)
 
-SceneBam's planner already speaks the OpenAI-compatible protocol, so it can
-route a brief to a model running inside a TEE on NEAR AI Cloud
-(`https://cloud-api.near.ai/v1`). The record's `ai_attestation` field holds
-the digest of NEAR AI's signed response proof. A film can then show that it
-was planned privately and is owned by this creator.
+A film's plan, meaning the brief turned into a title and scenes, can be
+produced by a model running inside a TEE on NEAR AI Cloud. The proof is
+attached to the film's NEAR record. `worker/near-ai-proof.ts`:
+1. sends the brief to a TEE-hosted model and keeps the exact request and
+   response bytes;
+2. fetches NEAR AI's signature for the completion. The signed text is
+   `sha256(request):sha256(response)`, signed EIP-191 by a key that lives
+   inside the TEE;
+3. checks both hashes and recovers the signer;
+4. fetches the attestation report with a fresh nonce and checks that the
+   Intel TDX quote's `report_data` commits to that signing key and nonce;
+5. reduces the proof to one SHA-256 digest, which is stored as the record's
+   `ai_attestation`.
+
+The verify page then shows *"Planned inside a TEE on NEAR AI Cloud"*.
+
+**8. Plan a film privately and anchor the proof**
+
+```bash
+NEAR_AI_API_KEY=<key> node --import tsx cli/plan-private.ts "A 60-second whiteboard explainer on compound interest"
+```
+
+You should see the plan, followed by four checks:
+- ✓ request hash
+- ✓ response hash
+- ✓ signature
+- ✓ TEE key binding
+
+Then comes the `proof digest`, and the full proof is written to
+`ai-attestation.json`. Pass the digest to `register` as `AI_ATTESTATION=<digest>`.
+
+`npm test` covers the verification logic offline, using a locally generated
+key in place of the TEE key. It checks that genuine proofs pass, and that a
+tampered response, a foreign signer or an unbound attestation fail.
 
 ## Cost
 
@@ -179,7 +208,7 @@ Measured on testnet:
 - **Built during NEAR HACKATHON (Nov 2026):** everything in this repository,
   meaning the registry contract, the CLI, the verify page, the worker module
   and its tests, plus the hook inside SceneBam's private repository.
-- **Libraries:** `near-sdk` 5.30 (Rust), `near-api-js` 7.5.3, `tsx`, Node's
+- **Libraries:** `near-sdk` 5.30 (Rust), `near-api-js` 7.5.3, `ethers` 6 (EIP-191 recovery), `tsx`, Node's
   built-in test runner and `binaryen` (`wasm-opt`). AI coding assistance
   (Claude Code) was used.
 
