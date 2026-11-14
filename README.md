@@ -29,6 +29,7 @@ SceneBam's servers.
 | Contract | [`scenebam-prov-mwfjzimv.testnet`](https://testnet.nearblocks.io/address/scenebam-prov-mwfjzimv.testnet) |
 | Registered films | `demo/whiteboard-board.mp4` ([tx](https://testnet.nearblocks.io/txns/85cytqh4WXV6XSKNfS2gnag2dm9zmWGL4vwHJnxH297E)), `demo/explainer-sketch.mp4` ([tx](https://testnet.nearblocks.io/txns/2Rb5XhHts8ysPzr5gba1xQXV3SJg6BW4y51P65BBdZa9)), `demo/chalkboard.mp4` ([tx](https://testnet.nearblocks.io/txns/H2gwPpGLmbLVD6ZjxE1sQFYa4acHgsQc9N6bpDZNU3R9)) |
 | Film planned privately on NEAR AI Cloud | `demo/private-whiteboard.mp4` ([tx](https://testnet.nearblocks.io/txns/9yHMKFTSvaf2aSiZaNoYPokRpSSgGyV9EPE5tCcgd8on)). Its record's `ai_attestation` is the digest of `demo/proofs/private-whiteboard.ai-attestation.json`, a live proof from `deepseek-ai/DeepSeek-V4.1-Flash-1017` in which all four checks passed |
+| Launch demo film | `demo/launch-presenter-9x16.mp4`, the presenter film narrating our demo, made with SceneBam’s 2D Character Cast engine and registered to `domistro.near` ([tx](https://testnet.nearblocks.io/txns/Bk5Eaic1tDRUBJS6PXN542wRUEJiCzraaLWXQ5nqbmAw), block 277,710,498). Run `node cli/verify.mjs demo/launch-presenter-9x16.mp4` to check it |
 | Verify page | `web/index.html` (static, no build; also on GitHub Pages at https://domistro.github.io/scenebam-near/web/) |
 
 The three demo films are real SceneBam output.
